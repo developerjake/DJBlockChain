@@ -4,8 +4,8 @@
     "module": "CommonJS",
     "target": "es2019",
     "types": ["node"],
-
     "strict": true,
+    "strictNullChecks": false,
     "esModuleInterop": true,
     "skipLibCheck": true
   }
