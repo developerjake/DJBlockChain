@@ -13,10 +13,12 @@ class Transaction {
 }
 
 class Block {
+  nonce = Math.round(Math.random() * 999999999);
+
   constructor(
     public previousHash: string,
     public transaction: Transaction,
-    public timestamp = Date.now()
+    public timestamp = Date.now()    
   ) { }
 
   get hash() {
@@ -32,12 +34,12 @@ class Chain {
 
   chain: Block[];
 
-  get previousBlock() {
-    return this.chain[this.chain.length - 1];
-  }
-
   constructor() { // set the genesis block
     this.chain = [new Block(null, new Transaction(100, 'genesis', 'satoshi'))];
+  }
+
+  get previousBlock() {
+    return this.chain[this.chain.length - 1];
   }
 
   addBlock(transaction: Transaction, senderPublicKey: string, signature: Buffer) {
@@ -47,7 +49,28 @@ class Chain {
 
     if (isValid) {
       const newBlock = new Block(this.previousBlock.hash, transaction);
+      this.mine(newBlock.nonce);
       this.chain.push(newBlock);
+    }
+  }
+
+  mine(nonce: number) {
+    let solution = 1;
+    console.log('Mining... ⛏');
+
+    while(true) {
+      // MD5 is very similar to SHA256, but only 128 bits and faster to compute
+      const hash = crypto.createHash('MD5');
+      hash.update((nonce + solution).toString()).end();
+
+      const attempt = hash.digest('hex');
+
+      if (attempt.substr(0, 4) === '0000') {
+        console.log(`Solved: ${solution}`);
+        return solution;
+      }
+
+      ++solution;
     }
   }
 }
@@ -75,3 +98,15 @@ class Wallet {
     Chain.instance.addBlock(transaction, this.publicKey, signature);
   }
 }
+
+// Example usage
+
+const satoshi = new Wallet();
+const jake = new Wallet();
+const gabi = new Wallet();
+
+satoshi.sendCrypto(50, gabi.publicKey);
+gabi.sendCrypto(30, jake.publicKey);
+jake.sendCrypto(5, gabi.publicKey);
+
+console.log(Chain.instance);
